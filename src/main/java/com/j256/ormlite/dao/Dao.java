@@ -20,6 +20,7 @@ import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.SelectArg;
 import com.j256.ormlite.stmt.UpdateBuilder;
+import com.j256.ormlite.support.CancellationSignaller;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
@@ -148,6 +149,31 @@ public interface Dao<T, ID> extends CloseableIterable<T> {
 	 *             on any SQL problems.
 	 */
 	public List<T> query(PreparedQuery<T> preparedQuery) throws SQLException;
+
+	/**
+	 * Query for the items in the object table which match the prepared query.
+	 * See {@link #queryBuilder} for more information.
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> For medium sized or large tables, this may load a lot of
+	 * objects into memory so you should consider using the
+	 * {@link #iterator(PreparedQuery)} method instead.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> cancellation is not supported by all database types.
+	 * </p>
+	 * 
+	 * @param preparedQuery
+	 *            Query used to match the objects in the database.
+	 * @param cancellationSignaller
+	 *            signaller used to cancel the query from another thread.
+	 * @return A list of all of the objects in the table that match the query.
+	 * @throws SQLException
+	 *             on any SQL problems.
+	 * 
+	 */
+	public List<T> query(PreparedQuery<T> preparedQuery, CancellationSignaller cancellationSignaller) throws SQLException;
 
 	/**
 	 * Create a new row in the database from an object.

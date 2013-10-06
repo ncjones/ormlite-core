@@ -74,4 +74,9 @@ public interface CompiledStatement {
 	 * </p>
 	 */
 	public void setQueryTimeout(long millis) throws SQLException;
+	
+	/**
+	 * Cancel the query currently running for this compiled statement.
+	 */
+	public void cancelQuery() throws SQLException;
 }

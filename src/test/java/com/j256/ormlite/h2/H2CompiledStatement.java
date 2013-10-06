@@ -108,4 +108,8 @@ public class H2CompiledStatement implements CompiledStatement {
 				throw new IllegalArgumentException("No JDBC mapping for unknown SqlType " + sqlType);
 		}
 	}
+
+	public void cancelQuery() throws SQLException {
+		preparedStatement.cancel();
+	}
 }

@@ -18,6 +18,7 @@ import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.GenericRowMapper;
 import com.j256.ormlite.stmt.PreparedDelete;
 import com.j256.ormlite.stmt.PreparedQuery;
+import com.j256.ormlite.stmt.PreparedStmt;
 import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.SelectArg;
@@ -26,6 +27,7 @@ import com.j256.ormlite.stmt.StatementBuilder.StatementType;
 import com.j256.ormlite.stmt.StatementExecutor;
 import com.j256.ormlite.stmt.UpdateBuilder;
 import com.j256.ormlite.stmt.Where;
+import com.j256.ormlite.support.CancellationSignaller;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
@@ -259,8 +261,12 @@ public abstract class BaseDaoImpl<T, ID> implements Dao<T, ID> {
 	}
 
 	public List<T> query(PreparedQuery<T> preparedQuery) throws SQLException {
+		return query(preparedQuery, null);
+	}
+
+	public List<T> query(PreparedQuery<T> preparedQuery, CancellationSignaller cancellationSignaller) throws SQLException {
 		checkForInitialized();
-		return statementExecutor.query(connectionSource, preparedQuery, objectCache);
+		return statementExecutor.query(connectionSource, preparedQuery, objectCache, cancellationSignaller);
 	}
 
 	public List<T> queryForMatching(T matchObj) throws SQLException {

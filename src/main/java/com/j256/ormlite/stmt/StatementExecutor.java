@@ -28,6 +28,7 @@ import com.j256.ormlite.stmt.mapped.MappedQueryForId;
 import com.j256.ormlite.stmt.mapped.MappedRefresh;
 import com.j256.ormlite.stmt.mapped.MappedUpdate;
 import com.j256.ormlite.stmt.mapped.MappedUpdateId;
+import com.j256.ormlite.support.CancellationSignaller;
 import com.j256.ormlite.support.CompiledStatement;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
@@ -193,9 +194,18 @@ public class StatementExecutor<T, ID> implements GenericRowMapper<String[]> {
 	 */
 	public List<T> query(ConnectionSource connectionSource, PreparedStmt<T> preparedStmt, ObjectCache objectCache)
 			throws SQLException {
+		return query(connectionSource, preparedStmt, objectCache, null);
+	}
+
+	/**
+	 * Return a list of all of the data in the table that matches the {@link PreparedStmt}. Should be used carefully if
+	 * the table is large. Consider using the {@link Dao#iterator} if this is the case.
+	 */
+	public List<T> query(ConnectionSource connectionSource, PreparedStmt<T> preparedStmt, ObjectCache objectCache,
+			CancellationSignaller cancellationSignaller) throws SQLException {
 		SelectIterator<T, ID> iterator =
 				buildIterator(/* no dao specified because no removes */null, connectionSource, preparedStmt, objectCache,
-						DatabaseConnection.DEFAULT_RESULT_FLAGS);
+						DatabaseConnection.DEFAULT_RESULT_FLAGS, cancellationSignaller);
 		try {
 			List<T> results = new ArrayList<T>();
 			while (iterator.hasNextThrow()) {
@@ -240,13 +250,24 @@ public class StatementExecutor<T, ID> implements GenericRowMapper<String[]> {
 	 */
 	public SelectIterator<T, ID> buildIterator(BaseDaoImpl<T, ID> classDao, ConnectionSource connectionSource,
 			PreparedStmt<T> preparedStmt, ObjectCache objectCache, int resultFlags) throws SQLException {
+		return buildIterator(classDao, connectionSource, preparedStmt, objectCache, resultFlags, null);
+	}
+
+	/**
+	 * Create and return an {@link SelectIterator} for the class using a prepared statement.
+	 */
+	public SelectIterator<T, ID> buildIterator(BaseDaoImpl<T, ID> classDao, ConnectionSource connectionSource,
+			PreparedStmt<T> preparedStmt, ObjectCache objectCache, int resultFlags,
+			CancellationSignaller cancellationSignaller) throws SQLException {
 		DatabaseConnection connection = connectionSource.getReadOnlyConnection();
 		CompiledStatement compiledStatement = null;
 		try {
 			compiledStatement = preparedStmt.compile(connection, StatementType.SELECT, resultFlags);
+			String sqlStatement = preparedStmt.getStatement();
+			assignCancellationListener(cancellationSignaller, compiledStatement, sqlStatement);
 			SelectIterator<T, ID> iterator =
 					new SelectIterator<T, ID>(tableInfo.getDataClass(), classDao, preparedStmt, connectionSource,
-							connection, compiledStatement, preparedStmt.getStatement(), objectCache);
+							connection, compiledStatement, sqlStatement, objectCache);
 			connection = null;
 			compiledStatement = null;
 			return iterator;
@@ -257,6 +278,21 @@ public class StatementExecutor<T, ID> implements GenericRowMapper<String[]> {
 			if (connection != null) {
 				connectionSource.releaseConnection(connection);
 			}
+		}
+	}
+
+	private void assignCancellationListener(final CancellationSignaller cancellationSignal,
+			final CompiledStatement compiledStatement, final String statementDescription) {
+		if (cancellationSignal != null) {
+			cancellationSignal.attach(new CancellationSignaller.Cancellable() {
+				public void cancel() {
+					try {
+						compiledStatement.cancelQuery();
+					} catch (SQLException e) {
+						throw new RuntimeException("Failed to cancel compiled statement: " + statementDescription, e);
+					}
+				}
+			});
 		}
 	}
 
