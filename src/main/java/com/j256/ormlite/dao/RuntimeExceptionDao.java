@@ -19,6 +19,7 @@ import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.UpdateBuilder;
+import com.j256.ormlite.support.CancellationSignaller;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
@@ -217,6 +218,18 @@ public class RuntimeExceptionDao<T, ID> implements CloseableIterable<T> {
 		}
 	}
 
+	/**
+	 * @see Dao#query(PreparedQuery, CancellationSignaller)
+	 */
+	public List<T> query(PreparedQuery<T> preparedQuery, CancellationSignaller cancellationSignaller) {
+		try {
+			return dao.query(preparedQuery, cancellationSignaller);
+		} catch (SQLException e) {
+			logMessage(e, "query threw exception on: " + preparedQuery);
+			throw new RuntimeException(e);
+		}
+	}
+	
 	/**
 	 * @see Dao#create(Object)
 	 */
