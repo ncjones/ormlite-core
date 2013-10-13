@@ -1,3 +1,5 @@
+This fork of ormlite-core provides experimental support for query cancellation.
+
 This package provides the core functionality for the JDBC and Android packages.  Users
 that are connecting to SQL databases via JDBC will need to download the ormlite-jdbc
 package as well. Android users should download the ormlite-android package as well as
@@ -9,7 +11,5 @@ For more information, see the online documentation on the home page:
 
 Sources can be found online via Github:
 
-   https://github.com/j256/ormlite-core
+   https://github.com/ncjones/ormlite-core
 
-Enjoy,
-Gray Watson
